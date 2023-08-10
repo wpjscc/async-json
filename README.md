@@ -1,7 +1,17 @@
 ## async json data structure
 
+[https://github.com/wpjscc/async-json](https://github.com/wpjscc/async-json)
 
 index.html 有大量的例子
+
+想了解一些上下文信息的请看这几篇文章
+
+* [json 里的value 如何从不同的上下文中取值](https://blog.wpjs.cc/blog/post/json-value-get-different-context-value)
+* [json 里的value 如何从不同的上下文中取值-之promise](https://blog.wpjs.cc/blog/post/json-value-promise)
+
+
+下面将列举一些例子，说明如何使用它。
+
 
 ## simple use
 
