@@ -121,9 +121,22 @@ ouput
     })
 
 
+    asyncJson.registerDataStructure('id', ":id")
+    asyncJson.registerDataStructure('name', ":name")
+    asyncJson.registerDataStructure('title', ":title")
+
     asyncJson.registerDataStructure('user', {
         id: ':id',
         name: ':name'
+    })
+
+     asyncJson.registerDataStructure('user_structure', {
+        id: {
+            _data_structure: 'id',
+        },
+        name: {
+            _data_structure: 'name'
+        }
     })
 
     asyncJson.registerDataStructure('post', {
@@ -147,7 +160,7 @@ ouput
         user: ':user',
         user_structure: {
             _data_source:'user',
-            _data_structure: 'user',
+            _data_structure: 'user_structure',
         },
         user_structure_custome: {
             _data_source:'user',
@@ -243,3 +256,236 @@ ouput
     }
 }
 ```
+
+## promise
+
+```
+    var asyncJson = new window.AsyncJson
+    asyncJson.registerDataSource('api', (config) => async () => await [{id:5},{id:6},{url: config._data_option.url}])
+    asyncJson.getAsyncJson({
+        api_data: {
+            _data_source: 'api',
+            _data_option: {
+                url: '/api'
+            }
+        }
+    }).then(res=> {
+        console.log(res, JSON.stringify(res))
+    }).catch(error => {
+        console.error(error)
+    })
+
+
+```
+
+ouput
+```
+{
+    "api_data": [
+        {
+            "id": 5
+        },
+        {
+            "id": 6
+        },
+        {
+            "url": "/api"
+        }
+    ]
+}
+```
+
+_data_option 可以动态替换掉参数（替换掉的是父上下文中的数据）
+
+
+```
+    var asyncJson = new window.AsyncJson
+    asyncJson.registerDataSource('user', {
+        id: 1,
+        name: 'hello user',
+    })
+    asyncJson.registerDataSource('api', (config) => async () => await [{id:5},{id:6},{url: config._data_option.url}])
+    asyncJson.getAsyncJson({
+        api_data: {
+            _data_source: 'api',
+            _data_option: {
+                url: '/api/:user.id'
+            }
+        }
+    }).then(res=> {
+        console.log(res, JSON.stringify(res))
+    }).catch(error => {
+        console.error(error)
+    })
+```
+
+output
+
+```
+{
+    "api_data": [
+        {
+            "id": 5
+        },
+        {
+            "id": 6
+        },
+        {
+            "url": "/api/1"
+        }
+    ]
+}
+```
+
+
+可以将 api_data 封装成一个数据源
+```
+    var asyncJson = new window.AsyncJson
+    asyncJson.registerDataSource('user', {
+        id: 1,
+        name: 'hello user',
+    })
+    asyncJson.registerDataSource('api', (config) => async () => await [{id:5},{id:6},{url: config._data_option.url}])
+    asyncJson.registerDataSource('api_data', {
+        _data_source: 'api',
+        _data_option: {
+            url: '/api/:id'
+        }
+    })
+    asyncJson.getAsyncJson({
+        user: {
+            _data_source: 'user',
+            _data_structure: {
+                id: ':id',
+                api_data: {
+                    _data_source: 'api_data'
+                }
+            }
+        }
+    }).then(res=> {
+        console.log(res, JSON.stringify(res))
+    }).catch(error => {
+        console.error(error)
+    })
+```
+
+output 
+
+```
+{
+    "user": {
+        "id": 1,
+        "api_data": [
+            {
+                "id": 5
+            },
+            {
+                "id": 6
+            },
+            {
+                "url": "/api/1"
+            }
+        ]
+    }
+}
+```
+
+## 数据源组合
+
+```
+    var asyncJson = new window.AsyncJson
+
+    asyncJson.registerDataSource('user', {
+        id: 1,
+        name: 'hello user',
+    })
+
+    asyncJson.registerDataSource('post', {
+        id: 2,
+        title: 'hello post'
+    })
+    asyncJson.registerDataSource('user_post', {
+        _data_source: 'user',
+        _data_structure: {
+            id: ':id',
+            post: {
+                _data_source: 'post'
+            }
+        }
+
+    })
+
+    asyncJson.getAsyncJson({
+        user_post: ':user_post',
+        user_post1: {
+            _data_source: 'user_post'
+        },
+        user_post2: {
+            _data_source: 'user_post',
+            _data_structure: {
+                user_id: ':id',
+                post: {
+                    _data_source: ':post',
+                    _data_structure: {
+                        post_id: ':id',
+                        post_title: ':title'
+                    }
+                }
+            }
+        },
+    }).then(res=> {
+        console.log(res, JSON.stringify(res))
+    }).catch(error => {
+        console.error(error)
+    })
+
+
+```
+
+output
+
+```
+{
+    "user_post": {
+        "id": 1,
+        "post": {
+            "id": 2,
+            "title": "hello post"
+        }
+    },
+    "user_post1": {
+        "id": 1,
+        "post": {
+            "id": 2,
+            "title": "hello post"
+        }
+    },
+    "user_post2": {
+        "user_id": 1,
+        "post": {
+            "post_id": 2,
+            "post_title": "hello post"
+        }
+    }
+}
+```
+
+注意 下方的 `_data_source: ':post'` 中的 `:post` 当是冒号开头时，从父上下文寻找数据，即 user_post 中
+
+```
+user_post2: {
+    _data_source: 'user_post',
+    _data_structure: {
+        user_id: ':id',
+        post: {
+            _data_source: ':post',
+            _data_structure: {
+                post_id: ':id',
+                post_title: ':title'
+            }
+        }
+    }
+}
+```
+
+
