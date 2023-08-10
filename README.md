@@ -348,7 +348,7 @@ output
 ```
 
 
-可以将 api_data 封装成一个数据源
+可以将 api_data 封装成一个数据源(_data_option 也可以被封装)
 ```
     var asyncJson = new window.AsyncJson
     asyncJson.registerDataSource('user', {
@@ -358,10 +358,13 @@ output
     asyncJson.registerDataSource('api', (config) => async () => await [{id:5},{id:6},{url: config._data_option.url}])
     asyncJson.registerDataSource('api_data', {
         _data_source: 'api',
-        _data_option: {
-            url: '/api/:id'
-        }
+        _data_option: 'api_option'
     })
+
+    asyncJson.registerDataOption('api_option', {
+        url: '/api/:id'
+    })
+
     asyncJson.getAsyncJson({
         user: {
             _data_source: 'user',
@@ -499,3 +502,4 @@ user_post2: {
 ```
 
 
+以上
