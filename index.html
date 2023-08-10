@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script src="./async-json.js"></script>
+    <script>
+       function appendUrlParam(url, param) {
+            Object.keys(param).forEach(function (paramName) {
+                if (url.indexOf(paramName + '=') === -1) {
+                    if (url.indexOf('?') === -1) {
+                        url += '?' + paramName + '=' + encodeURIComponent(param[paramName]);
+                    } else {
+                        url += '&' + paramName + '=' + encodeURIComponent(param[paramName]);
+                    }
+                }
+            })
+            return url;
+        }
+        async function ajaxRequest(options) {
+
+            // if (options._is_dynamic) {
+            //     options = await replaceParams(options, await getDataSource({}))
+            // }
+            console.log('ajaxRequest', options)
+
+            var _data_option = {
+                method: (options.method || "GET").toUpperCase(),
+                headers: options.headers || {},
+            }
+            if (options.params) {
+                options.url = appendUrlParam(options.url, options.params)
+            }
+
+            if (_data_option.method != 'GET' && _data_option.method != 'HEAD') {
+                // _data_option.headers['Content-Type'] = 'application/json'
+                _data_option.body = JSON.stringify(options.data || {})
+            }
+
+            console.log('ajaxRequest:url', options.url, _data_option)
+
+            return await fetch(options.url, _data_option)
+                .then(response => response.json())
+        }
+        var asyncJson2 = new window.AsyncJson
+        // 注册数据源
+
+        // 数字
+        asyncJson2.registerDataSource('number', 1)
+        // 字符串
+        asyncJson2.registerDataSource('string', 'hello world')
+        // 对象
+        asyncJson2.registerDataSource('obj', {
+            number: 1,
+            string: 'hello world',
+        })
+        // 数组
+        asyncJson2.registerDataSource('array', [
+            {
+                number: 1,
+                string: 'hello world',
+            },
+            {
+                number: 2,
+                string: 'hello world2',
+            }
+        ])
+
+
+        // 对象
+        asyncJson2.registerDataSource('user', {
+            id: 1,
+            name: 'hello user',
+        })
+        asyncJson2.registerDataSource('post', {
+            id: 2,
+            title: 'hello post'
+        })
+
+        // 定义带结构的数据源（依赖user和post）
+        asyncJson2.registerDataSource('user_post', {
+            _data_source: 'user',
+            _data_structure: 'user_post',
+        })
+
+
+        // 函数数据源
+        asyncJson2.registerDataSource('comment', function (config) {
+            return {
+                id: 3,
+                title: 'hello function comment',
+            }
+        })  
+
+        // api 数据源
+        asyncJson2.registerDataSource('api', (config) => async () => await ajaxRequest(config._data_option))
+
+
+        // comments 数据源 (依赖api数据源)
+        asyncJson2.registerDataSource('comments', {
+            _data_source: 'api',
+            _data_option: 'comments',
+            _data_structure: 'comment',
+        })
+
+        // 子父级数据源
+        asyncJson2.registerDataSource('post_comments', function (config) {
+            return {
+                _data_source: 'post',
+                _data_structure: 'post_comments',
+            }
+        })
+
+
+        // 注册结构
+        asyncJson2.registerDataStructure('user', {
+            id: ':id',
+            name: ':name'
+        })
+        asyncJson2.registerDataStructure('post', {
+            id: ':id',
+            title: ':title'
+        })
+        asyncJson2.registerDataStructure('comment', {
+            id: ':id',
+            title: ':title:name'
+        })
+
+        asyncJson2.registerDataStructure('post_comments', {
+            id: ':id',
+            title: ':title',
+            comments: {
+                _data_source: 'api',
+                _data_option: 'comments',
+                _data_structure: 'comment',
+            }
+        })
+        // 注册结构
+
+
+        // 结构引用
+        asyncJson2.registerDataStructure('id', ":id")
+        asyncJson2.registerDataStructure('name', ":name")
+        asyncJson2.registerDataStructure('title', ":title")
+
+        asyncJson2.registerDataStructure('user_structure', {
+            id: {
+                _data_structure: 'id',
+            },
+            name: {
+                _data_structure: 'name'
+            }
+        })
+        asyncJson2.registerDataStructure('post_structure', {
+            id: {
+                _data_structure: 'id',
+            },
+            title: {
+                _data_structure: 'title'
+            },
+        })
+        asyncJson2.registerDataStructure('user_post', {
+            id: {
+                _data_structure: 'id',
+            },
+            name: {
+                _data_structure: 'name'
+            },
+            post: {
+                _data_source: 'post',
+                _data_structure: 'post'
+            }
+        })
+        // 结构引用
+
+        // 注册option
+        asyncJson2.registerDataOption('comments', {
+            "method": "GET",
+            "url": "https://blog.wpjs.cc/backend/wpjscc/prompt/prompts/prompts",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "params": {
+                "post_id": ":id"
+            }
+        })
+        // 注册option
+
+
+
+
+        asyncJson2.getAsyncJson({
+
+            number: ':number',
+            number_source: {
+                _data_source: 'number',
+            },
+
+            string: ':string',
+            string_source: {
+                _data_source: 'string',
+            },
+
+            obj: ':obj',
+            obj_source: {
+                _data_source: 'obj',
+            },
+
+            array: ':array',
+            array_source: {
+                _data_source: 'array',
+            },
+
+            user: ":user",
+            user_source: {
+                _data_source: 'user',
+                _data_structure: 'user',
+            },
+            user_structure: {
+                _data_source: 'user',
+                _data_structure: 'user_structure',
+            },
+
+            post: ':post',
+            post_source: {
+                _data_source: 'post',
+                _data_structure: 'post',
+            },
+            post_structure: {
+                _data_source: 'post',
+                _data_structure: 'post_structure',
+            },
+
+
+            user_post: ":user_post",
+            user_post_source: {
+                _data_source: "user_post",
+            },
+            user_post_structure: {
+                _data_source: 'user',
+                _data_structure: 'user_post',
+            },
+
+            comment_function: ":comment",
+            comment_function_structure: {
+                _data_source: 'comment',
+                _data_structure: 'comment',
+            },
+
+            post_comments: ":post_comments",
+            post_comments_1: {
+                _data_source: 'post',
+                _data_structure: 'post_comments',
+            },
+            post_comments_2: {
+                _data_source: 'post',
+                _data_structure: {
+                    id: ':id',
+                    title: ':title',
+                    comments: {
+                        _data_source: 'comments',
+                        _data_structure: 'comment',
+                    },
+                },
+            },
+            post_comments_3: {
+                _data_source: 'post',
+                _data_structure: {
+                    id: ':id',
+                    title: ':title',
+                    comments: {
+                        _data_source: 'api',
+                        _data_option: 'comments',
+                        _data_structure: 'comment',
+                    },
+                },
+            },
+            post_comments_4: {
+                _data_source: 'post',
+                _data_structure: {
+                    id: ':id',
+                    title: ':title',
+                    comments: {
+                        _data_source: 'api',
+                        _data_option: 'comments',
+                        _data_structure: {
+                            id: ':id',
+                            title: ':name',
+                        },
+                    },
+                },
+            },
+            post_comments_5: {
+                _data_source: 'post',
+                _data_structure: {
+                    id: {
+                        _data_structure: 'id',
+                    },
+                    title: {
+                        _data_structure: 'title',
+                    },
+                    comments: {
+                        _data_source: 'comments',
+                        _data_structure: 'comment',
+                    },
+                }
+            },
+            post_comments_structure: {
+                _data_source: 'post_comments',
+                _data_structure: {
+                    id: ':id',
+                    title: ':title',
+                    comments: {
+                        _data_source: ':comments',
+                        _data_structure: {
+                            id: ':id',
+                        },
+                    },
+                },
+            },
+
+           
+        }).then(async res=> {
+            console.log(res, JSON.stringify(res))
+            console.log(await asyncJson2.getDataSource({
+                _data_source:'post'
+            }))
+        }).catch(error => {
+            console.error(error)
+        })
+
+    </script>
+</body>
+
+</html>
