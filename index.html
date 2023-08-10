@@ -47,20 +47,20 @@
             return await fetch(options.url, _data_option)
                 .then(response => response.json())
         }
-        var asyncJson2 = new window.AsyncJson
+        var asyncJson = new window.AsyncJson
         // 注册数据源
 
         // 数字
-        asyncJson2.registerDataSource('number', 1)
+        asyncJson.registerDataSource('number', 1)
         // 字符串
-        asyncJson2.registerDataSource('string', 'hello world')
+        asyncJson.registerDataSource('string', 'hello world')
         // 对象
-        asyncJson2.registerDataSource('obj', {
+        asyncJson.registerDataSource('obj', {
             number: 1,
             string: 'hello world',
         })
         // 数组
-        asyncJson2.registerDataSource('array', [
+        asyncJson.registerDataSource('array', [
             {
                 number: 1,
                 string: 'hello world',
@@ -73,24 +73,24 @@
 
 
         // 对象
-        asyncJson2.registerDataSource('user', {
+        asyncJson.registerDataSource('user', {
             id: 1,
             name: 'hello user',
         })
-        asyncJson2.registerDataSource('post', {
+        asyncJson.registerDataSource('post', {
             id: 2,
             title: 'hello post'
         })
 
         // 定义带结构的数据源（依赖user和post）
-        asyncJson2.registerDataSource('user_post', {
+        asyncJson.registerDataSource('user_post', {
             _data_source: 'user',
             _data_structure: 'user_post',
         })
 
 
         // 函数数据源
-        asyncJson2.registerDataSource('comment', function (config) {
+        asyncJson.registerDataSource('comment', function (config) {
             return {
                 id: 3,
                 title: 'hello function comment',
@@ -98,18 +98,18 @@
         })  
 
         // api 数据源
-        asyncJson2.registerDataSource('api', (config) => async () => await ajaxRequest(config._data_option))
+        asyncJson.registerDataSource('api', (config) => async () => await ajaxRequest(config._data_option))
 
 
         // comments 数据源 (依赖api数据源)
-        asyncJson2.registerDataSource('comments', {
+        asyncJson.registerDataSource('comments', {
             _data_source: 'api',
             _data_option: 'comments',
             _data_structure: 'comment',
         })
 
         // 子父级数据源
-        asyncJson2.registerDataSource('post_comments', function (config) {
+        asyncJson.registerDataSource('post_comments', function (config) {
             return {
                 _data_source: 'post',
                 _data_structure: 'post_comments',
@@ -118,20 +118,20 @@
 
 
         // 注册结构
-        asyncJson2.registerDataStructure('user', {
+        asyncJson.registerDataStructure('user', {
             id: ':id',
             name: ':name'
         })
-        asyncJson2.registerDataStructure('post', {
+        asyncJson.registerDataStructure('post', {
             id: ':id',
             title: ':title'
         })
-        asyncJson2.registerDataStructure('comment', {
+        asyncJson.registerDataStructure('comment', {
             id: ':id',
             title: ':title:name'
         })
 
-        asyncJson2.registerDataStructure('post_comments', {
+        asyncJson.registerDataStructure('post_comments', {
             id: ':id',
             title: ':title',
             comments: {
@@ -144,11 +144,11 @@
 
 
         // 结构引用
-        asyncJson2.registerDataStructure('id', ":id")
-        asyncJson2.registerDataStructure('name', ":name")
-        asyncJson2.registerDataStructure('title', ":title")
+        asyncJson.registerDataStructure('id', ":id")
+        asyncJson.registerDataStructure('name', ":name")
+        asyncJson.registerDataStructure('title', ":title")
 
-        asyncJson2.registerDataStructure('user_structure', {
+        asyncJson.registerDataStructure('user_structure', {
             id: {
                 _data_structure: 'id',
             },
@@ -156,7 +156,7 @@
                 _data_structure: 'name'
             }
         })
-        asyncJson2.registerDataStructure('post_structure', {
+        asyncJson.registerDataStructure('post_structure', {
             id: {
                 _data_structure: 'id',
             },
@@ -164,7 +164,7 @@
                 _data_structure: 'title'
             },
         })
-        asyncJson2.registerDataStructure('user_post', {
+        asyncJson.registerDataStructure('user_post', {
             id: {
                 _data_structure: 'id',
             },
@@ -179,7 +179,7 @@
         // 结构引用
 
         // 注册option
-        asyncJson2.registerDataOption('comments', {
+        asyncJson.registerDataOption('comments', {
             "method": "GET",
             "url": "https://blog.wpjs.cc/backend/wpjscc/prompt/prompts/prompts",
             "headers": {
@@ -194,7 +194,7 @@
 
 
 
-        asyncJson2.getAsyncJson({
+        asyncJson.getAsyncJson({
 
             number: ':number',
             number_source: {
@@ -327,7 +327,7 @@
            
         }).then(async res=> {
             console.log(res, JSON.stringify(res))
-            console.log(await asyncJson2.getDataSource({
+            console.log(await asyncJson.getDataSource({
                 _data_source:'post'
             }))
         }).catch(error => {
