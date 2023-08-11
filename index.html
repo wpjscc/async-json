@@ -104,6 +104,9 @@
         // comments 数据源 (依赖api数据源)
         asyncJson.registerDataSource('comments', {
             _data_source: 'api',
+            _data_context: {
+                id: ":id",
+            },
             _data_option: 'comments',
             _data_structure: 'comment',
         })

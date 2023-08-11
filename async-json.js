@@ -113,6 +113,10 @@
                 return _data_option
             }
 
+            if (config._data_context) {
+                current_context = await this.getAsyncJson(config._data_context, current_context)
+            }
+
             if (test.is_string(_data_option)) {
                 if (_data_option.indexOf(':') > -1) {
                     _data_option  = this.getAsyncJson(_data_option, current_context)
