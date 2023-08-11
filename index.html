@@ -251,7 +251,30 @@
                 _data_source: 'comment',
                 _data_structure: 'comment',
             },
-
+            comments: {
+                _data_source: 'comments',
+                _data_structure: 'comment',
+                _data_context: {
+                    id: 10
+                }
+            },
+            comments1: {
+                _data_source: [
+                    {
+                        _data_source: 'post',
+                    },
+                    {
+                        _data_source: 'post',
+                        _data_structure: {
+                            id: ':id',
+                            title: ':title',
+                            comments: {
+                                _data_source: 'comments',
+                            },
+                        },
+                    }
+                ]
+            },
             post_comments: ":post_comments",
             post_comments_1: {
                 _data_source: 'post',
@@ -330,6 +353,7 @@
             console.log(await asyncJson.getDataSource({
                 _data_source:'post'
             }))
+            // console.log(asyncJson.data_options['comments'])
         }).catch(error => {
             console.error(error)
         })

@@ -49,22 +49,57 @@
         }
         async getDataSource(config, current_context) {
 
-            var _data_source = this.data_sources[config._data_source]
+            var _data_source = config._data_source
 
-            if (_data_source) { 
-                if (test.is_function(_data_source)) { 
-                    do {
-                        _data_source = await _data_source(config)
-                    } while (test.is_function(_data_source));
+            if (!_data_source) { 
+                return _data_source
+            }
+
+            // var is_test = false
+            // if (_data_source == 'comments') {
+            //     is_test = true
+            // }
+
+            // 从注册数源里获取
+            if (test.is_string(_data_source)) {
+
+                // 说明是从当前上下文中去值的
+                if (_data_source.indexOf(':') > -1) {
+                    _data_source = await this.replaceParam(_data_source, current_context)
+                } else {
+                    _data_source = this.data_sources[_data_source]
+
+                    if (_data_source) {
+                        if (test.is_function(_data_source)) {
+                            do {
+                                _data_source = await _data_source(config)
+                            } while (test.is_function(_data_source));
+                        }
+                        if (test.is_data_source(_data_source)) {
+                            _data_source = await this.getAsyncJson(JSON.parse(JSON.stringify(_data_source)), config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)
+                        }
+                        // return _data_source
+                    }
                 }
-            } 
 
-            if (test.is_data_source(_data_source)) { 
-                _data_source = await this.getAsyncJson(_data_source, current_context)
+
+            }
+            
+            // 数据源潜套
+            else if (test.is_object(_data_source)) {
+
+                if (test.is_data_source(_data_source)) {
+                    _data_source = await this.getAsyncJson(JSON.parse(JSON.stringify(_data_source)), config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)
+                }
+            }
+            // 数据源潜套
+            else if (test.is_array(_data_source)) { 
+                _data_source = await Promise.all(_data_source.map(async item => await this.getAsyncJson(item, config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)))
+                console.log('getDataSource-array32132131232131', _data_source)
             }
 
             if (!_data_source) { 
-                console.error('未找到数据源:' + config._data_source)
+                console.error('未找到数据源: ' + config._data_source)
             }
 
             return _data_source
@@ -72,55 +107,86 @@
 
         async getDataOption(config, current_context) { 
 
+            var _data_option = config._data_option
 
-            if (test.is_string(config._data_option)) { 
-                if (config._data_option.indexOf(':') > -1) { 
-                    return await this.#replaceParams(config._data_option, current_context)
-                }
-                var _data_option = this.data_options[config._data_option]
-                if (_data_option) {
-                    if (test.is_function(_data_option)) {
-                        do {
-                            _data_option = await _data_option(_data_option)
-                        } while (test.is_function(_data_option));
-                    } else {
-                        _data_option = await this.#replaceParams(_data_option, current_context)
-                    }
-                    return _data_option
-                }
+            if (!_data_option) {
+                return _data_option
             }
 
-            return await this.#replaceParams(config._data_option, current_context)
+            if (test.is_string(_data_option)) {
+                if (_data_option.indexOf(':') > -1) {
+                    _data_option  = this.getAsyncJson(_data_option, current_context)
+                } else {
+                    _data_option = this.data_options[config._data_option]
+                    if (_data_option) {
+                        if (test.is_function(_data_option)) {
+                            do {
+                                _data_option = await _data_option(_data_option)
+                            } while (test.is_function(_data_option));
+                        }
+                        else if (test.is_object(_data_option) || test.is_array(_data_option)) {
+                            _data_option = await this.getAsyncJson(JSON.parse(JSON.stringify(_data_option)), current_context)
+                        }
+                        else {
+                            _data_option = await this.getAsyncJson(_data_option, current_context)
+                        }
+                    }
+                }
+               
+            } else if (test.is_object(config._data_option) || test.is_array(config._data_option)) { 
+                _data_option = await this.getAsyncJson(JSON.parse(JSON.stringify(config._data_option)), current_context)
+            }
+
+
+            if (!_data_option) { 
+                console.error('未找到数据选项:' + config._data_option)
+            }
+
+            return _data_option
+
+
 
         }
 
         async getDataStructure(config) {
             // 可以是数组、对象，字符串
 
-            if (test.is_string(config._data_structure)) {
-                // 说明已经定义了结构
-                if (config._data_structure.indexOf(':') > -1) { 
-                    return config._data_structure
-                }
-                // 去看下是否有数据结构定义
-                var _data_structure = this.data_structures[config._data_structure]
-                if (_data_structure) {
-                    if (test.is_function(_data_structure)) { 
-                        do {
-                            _data_structure = await _data_structure(config)
-                        } while (test.is_function(_data_structure));
-                    }
+            var _data_structure = config._data_structure
 
-                    if (test.is_object(_data_structure) || test.is_array(_data_structure)) { 
-                        _data_structure = JSON.parse(JSON.stringify(_data_structure))
-                    }
-                    return _data_structure
-                } else {
-                    console.error('未找到数据结构: ' + config._data_structure)
-                }
+            if (!_data_structure) { 
+                // 默认 返回所有
+                return _data_structure || ':*'
             }
 
-            return config._data_structure || config._key || ':*'
+            if (test.is_string(_data_structure)) {
+                // 说明已经定义了结构
+                if (_data_structure.indexOf(':') > -1) {
+                    // return _data_structure
+                } else {
+                    // 去看下是否有数据结构定义
+                    _data_structure = this.data_structures[config._data_structure]
+                    if (_data_structure) {
+                        if (test.is_function(_data_structure)) {
+                            do {
+                                _data_structure = await _data_structure(config)
+                            } while (test.is_function(_data_structure));
+                        }
+
+                        if (test.is_object(_data_structure) || test.is_array(_data_structure)) {
+                            _data_structure = JSON.parse(JSON.stringify(_data_structure))
+                        }
+                    }
+                }
+                
+            } else if (test.is_object(config._data_structure) || test.is_array(config._data_structure)) { 
+                _data_structure = JSON.parse(JSON.stringify(config._data_structure))
+            }
+
+            if (!_data_structure) { 
+                console.error('未找到数据结构:' + config._data_structure)
+            }
+
+            return _data_structure
 
         }
 
@@ -147,15 +213,15 @@
             else if (test.is_object(params)) {
                 if (test.is_data_source(params)) {
                     // 把当前上下文的数据传递到options中，方便下一个数据源和数据结构使用
-                    console.log('params._data_option', params._data_option)
+                    console.log('params._data_option-before:', params._data_option)
                     params._data_option = await this.getDataOption(params, current_data_source)
-                    console.log('params._data_option', params._data_option)
+                    console.log('params._data_option-after', params._data_option)
                     // 说明是从当前上下文中去值的
-                    if (params._data_source.startsWith(':')) {
-                        params = await this.#replaceParams(await this.getDataStructure(params), await this.replaceParam(params._data_source, current_data_source))
-                    } else {
+                    // if (params._data_source.startsWith(':')) {
+                    //     params = await this.#replaceParams(await this.getDataStructure(params), await this.replaceParam(params._data_source, current_data_source))
+                    // } else {
                         params = await this.#replaceParams(await this.getDataStructure(params), await this.getDataSource(params, current_data_source))
-                    }
+                    // }
                 }
 
                 else if (test.is_data_structure(params)) { 
@@ -186,6 +252,7 @@
                         }
                         // 直接获取的是数据源的json对象
                         else if (test.is_data_source(params)) {
+                            // params = await this.getAsyncJson(JSON.parse(JSON.stringify(params)))
                             params = await this.getAsyncJson(params)
                         }
 
@@ -213,6 +280,9 @@
             }
 
             if (param.startsWith(':') && this.countSubstring(param, ':') === 1) {
+                if (param.slice(1) === '*') {
+                    return obj
+                }
                 console.log('replaceParam', param, '->', data_get(obj, param.slice(1)))
                 return data_get(obj, param.slice(1));
             }
