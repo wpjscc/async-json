@@ -98,8 +98,8 @@
                 console.log('getDataSource-array32132131232131', _data_source)
             }
 
-            if (!_data_source) { 
-                console.error('未找到数据源: ' + config._data_source)
+            if (_data_source === undefined) { 
+                console.error('未找到数据源: ' + config._data_source, _data_source)
             }
 
             return _data_source
@@ -138,8 +138,8 @@
             }
 
 
-            if (!_data_option) { 
-                console.error('未找到数据选项:' + config._data_option)
+            if (_data_option === undefined) { 
+                console.error('未找到数据选项:' + config._data_option, _data_option)
             }
 
             return _data_option

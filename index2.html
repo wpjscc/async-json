@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script src="./async-json.js"></script>
+    <script>
+        var asyncJson = new AsyncJson();
+
+        asyncJson.registerDataSource('post', {
+            id: 2,
+            title: 'hello post'
+        })
+
+        asyncJson.registerDataSource('for', function (config) {
+            console.log(config)
+            var _i = 0;
+
+            if (config && config._data_option && config._data_option.i) {
+                _i = config._data_option.i;
+            }
+            
+            let array = [];
+
+            for (let i = 0 ; i < _i; i++) {
+                array.push({
+                    _i: i,
+                })
+            }
+            console.log(_i)
+            return array;
+        })
+        asyncJson.registerDataSource('if', function (config) {
+
+            var _item = config._data_option.item;
+
+            return _item._i % 2
+        })
+
+
+        asyncJson.getAsyncJson({
+            post: {
+                _data_source: 'post'
+            },
+            for: {
+                _data_source: 'for',
+                _data_option: {
+                    i: 10
+                },
+                _data_structure: {
+                    id: ':_i',
+                    _if: {
+                        _data_source: 'if',
+                        _data_option: {
+                            item: ':*'
+                        }
+                    }
+                }
+            }
+        }).then(async res=> {
+            console.log(res, JSON.stringify(res))
+            console.log(await asyncJson.getDataSource({
+                _data_source:'post'
+            }))
+            // console.log(asyncJson.data_options['comments'])
+        }).catch(error => {
+            console.error(error)
+        })
+    </script>
+</body>
+</html>
