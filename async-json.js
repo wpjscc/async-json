@@ -233,7 +233,9 @@
                 }
                 
                 else {
-                    if (test.is_array(current_data_source)) {
+                    var is_array = '_is_array' in params ? params._is_array : true;
+
+                    if (is_array&&test.is_array(current_data_source)) {
                         params = await Promise.all(current_data_source.map(async item => await this.#replaceParams(JSON.parse(JSON.stringify(params)), item)))
                     } else {
                         await Promise.all(Object.keys(params).map(async key => params[key] = await this.#replaceParams(params[key], current_data_source)))
