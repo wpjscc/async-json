@@ -65,6 +65,10 @@
 
                 // 说明是从当前上下文中去值的
                 if (_data_source.indexOf(':') > -1) {
+                    
+                    if (config._data_context) {
+                        current_context = await this.getAsyncJson(config._data_context, current_context)
+                    }
                     _data_source = await this.replaceParam(_data_source, current_context)
                 } else {
                     _data_source = this.data_sources[_data_source]
@@ -76,6 +80,9 @@
                             } while (test.is_function(_data_source));
                         }
                         if (test.is_data_source(_data_source)) {
+                            if (config._data_context) {
+                                current_context = await this.getAsyncJson(config._data_context, current_context)
+                            }
                             _data_source = await this.getAsyncJson(JSON.parse(JSON.stringify(_data_source)), config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)
                         }
                         // return _data_source
@@ -89,11 +96,17 @@
             else if (test.is_object(_data_source)) {
 
                 if (test.is_data_source(_data_source)) {
+                    if (config._data_context) {
+                        current_context = await this.getAsyncJson(config._data_context, current_context)
+                    }
                     _data_source = await this.getAsyncJson(JSON.parse(JSON.stringify(_data_source)), config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)
                 }
             }
             // 数据源潜套
             else if (test.is_array(_data_source)) { 
+                if (config._data_context) {
+                    current_context = await this.getAsyncJson(config._data_context, current_context)
+                }
                 _data_source = await Promise.all(_data_source.map(async item => await this.getAsyncJson(item, config._data_context ?  await this.getAsyncJson(config._data_context, current_context) : current_context)))
                 console.log('getDataSource-array32132131232131', _data_source)
             }
@@ -159,7 +172,7 @@
 
             if (!_data_structure) { 
                 // 默认 返回所有
-                return _data_structure || ':*'
+                return ':*'
             }
 
             if (test.is_string(_data_structure)) {
@@ -179,11 +192,19 @@
                         if (test.is_object(_data_structure) || test.is_array(_data_structure)) {
                             _data_structure = JSON.parse(JSON.stringify(_data_structure))
                         }
+
+                        if (test.is_data_structure(_data_structure)) {
+                            _data_structure = await this.getDataStructure(_data_structure)
+                        }
                     }
                 }
                 
             } else if (test.is_object(config._data_structure) || test.is_array(config._data_structure)) { 
                 _data_structure = JSON.parse(JSON.stringify(config._data_structure))
+
+                if (test.is_data_structure(_data_structure)) { 
+                    _data_structure = await this.getDataStructure(_data_structure)
+                }
             }
 
             if (!_data_structure) { 
@@ -228,14 +249,15 @@
                     // }
                 }
 
-                else if (test.is_data_structure(params)) { 
+                else if (test.is_data_structure(params)) {
+                    params._data_option = await this.getDataOption(params, current_data_source)
                     params = await this.#replaceParams(await this.getDataStructure(params), current_data_source)
                 }
                 
                 else {
-                    var is_array = '_is_array' in params ? params._is_array : true;
-
-                    if (is_array&&test.is_array(current_data_source)) {
+                    var _is_support_array = '_is_support_array' in params ? params._is_support_array : false;
+                    delete params._is_support_array
+                    if (_is_support_array&&test.is_array(current_data_source)) {
                         params = await Promise.all(current_data_source.map(async item => await this.#replaceParams(JSON.parse(JSON.stringify(params)), item)))
                     } else {
                         await Promise.all(Object.keys(params).map(async key => params[key] = await this.#replaceParams(params[key], current_data_source)))
@@ -265,6 +287,7 @@
 
                     } catch (error) {
                         console.error('replaceParam-error', params, current_data_source)
+                        throw error
                     }
             }
 
